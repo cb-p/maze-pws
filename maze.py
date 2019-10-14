@@ -1,5 +1,6 @@
 import datetime
 import pygame
+import ui
 
 
 class App:
@@ -11,7 +12,7 @@ class App:
         pygame.display.set_caption('Maze')
 
         self.frame_delta = datetime.timedelta(seconds=1/60)
-        self.step_delta = datetime.timedelta(seconds=1/10000)
+        self.step_delta = datetime.timedelta(seconds=1/60)
         self.last_step_delta = datetime.timedelta()
 
         pygame.font.init()
@@ -23,29 +24,41 @@ class App:
 
         self.solving_state = SolvingState.GENERATING
 
+        self.instant_solve_button = ui.Button('Instant Solve', self.font, 10, self.maze.full_height() + 40, 150, 30)
+
         pygame.init()
     
     def update(self):
         self.last_step_delta += self.frame_delta
 
+        if self.instant_solve_button.update():
+            while True:
+                if self.step_maze():
+                    break
+
         while self.last_step_delta > self.step_delta:
             self.last_step_delta -= self.step_delta
+            self.step_maze()
 
-            if self.solving_state == SolvingState.GENERATING:
-                self.maze_generator.step()
-
-                if self.maze.finished:
-                    self.solving_state = SolvingState.SOLVING
-            elif self.solving_state == SolvingState.SOLVING:
-                self.maze_solver.step()
-
-                if self.maze.finished:
-                    self.solving_state = SolvingState.IDLE
-            else:
-                pass
+    def step_maze(self):
+        if self.solving_state == SolvingState.GENERATING:
+            self.maze_generator.step()
 
             if self.maze.finished:
-                self.maze.finished = False
+                self.solving_state = SolvingState.SOLVING
+        elif self.solving_state == SolvingState.SOLVING:
+            self.maze_solver.step()
+
+            if self.maze.finished:
+                self.solving_state = SolvingState.IDLE
+        else:
+            pass
+
+        if self.maze.finished:
+            self.maze.finished = False
+            return True
+
+        return False
 
     def draw(self):
         self.display_surface.fill((255, 255, 255))
@@ -66,6 +79,8 @@ class App:
         state_text_surface = self.font.render(state_text, True, (0, 0, 0))
         state_text_width = state_text_surface.get_width()
         self.display_surface.blit(state_text_surface, (10 + self.maze.full_width() - state_text_width, 10))
+
+        self.instant_solve_button.draw(self.display_surface)
 
     def start(self):
         last_frame_time = datetime.datetime.now()
