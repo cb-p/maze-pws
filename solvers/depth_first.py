@@ -5,10 +5,10 @@ from generators.recursive_backtracking import *
 class DepthFirstSolver(MazeSolver):
     def __init__(self, maze, start, end):
         super().__init__(maze, start, end)
-        self.stack = [(0, 0)]
+        self.stack = [self.start]
         self.backtracking = False
         self.previous_directions = []
-        self.previous_direction = 99
+        self.previous_direction = -1
 
     def step(self):
         current_pos = self.stack[len(self.stack) - 1]
@@ -51,7 +51,7 @@ class DepthFirstSolver(MazeSolver):
                 return
 
         self.backtracking = True
-        self.maze.color(current_pos[0], current_pos[1], (255, 255, 255))
+        self.maze.color(current_pos[0], current_pos[1], (255, 228, 228))
         self.stack.pop()
         self.previous_direction = self.previous_directions.pop()
 

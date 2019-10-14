@@ -154,6 +154,7 @@ class Maze:
                     pygame.draw.rect(surface, color, pygame.Rect(draw_x, draw_y + self.tile_width, self.tile_width, self.border_width))
 
     def finish(self, path=None):
+        print("yes")
         self.finished = True
 
 
