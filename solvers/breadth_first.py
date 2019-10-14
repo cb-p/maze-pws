@@ -55,7 +55,6 @@ class BreadthFirstSolver(MazeSolver):
                         self.queue.append(new_pos)
 
     def generate_path(self):
-
         current = self.path[len(self.path) - 1]
 
         self.maze.highlight(current[0], current[1])
@@ -64,7 +63,8 @@ class BreadthFirstSolver(MazeSolver):
         self.path.append(self.old_pos[current[0]][current[1]])
 
         if self.path[-1] == self.start:
-            self.maze.finish(self.path.reverse())
+            self.path.reverse()
+            self.maze.finish(self.path)
 
 
 if __name__ == "__main__":

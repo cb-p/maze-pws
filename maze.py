@@ -11,7 +11,7 @@ class App:
         pygame.display.set_caption('Maze')
 
         self.frame_delta = datetime.timedelta(seconds=1/60)
-        self.step_delta = datetime.timedelta(seconds=1/60)
+        self.step_delta = datetime.timedelta(seconds=1/10000)
         self.last_step_delta = datetime.timedelta()
 
         pygame.font.init()
@@ -21,7 +21,7 @@ class App:
         self.maze_generator = generator(self.maze)
         self.maze_solver = solver(self.maze, (0, 0), (19, 19))
 
-        self.solving = False
+        self.solving_state = SolvingState.GENERATING
 
         pygame.init()
     
@@ -31,15 +31,21 @@ class App:
         while self.last_step_delta > self.step_delta:
             self.last_step_delta -= self.step_delta
 
-            if self.solving:
+            if self.solving_state == SolvingState.GENERATING:
+                self.maze_generator.step()
+
+                if self.maze.finished:
+                    self.solving_state = SolvingState.SOLVING
+            elif self.solving_state == SolvingState.SOLVING:
                 self.maze_solver.step()
+
+                if self.maze.finished:
+                    self.solving_state = SolvingState.IDLE
             else:
-                while not self.maze.finished:
-                    self.maze_generator.step()
+                pass
 
             if self.maze.finished:
                 self.maze.finished = False
-                self.solving = True
 
     def draw(self):
         self.display_surface.fill((255, 255, 255))
@@ -48,8 +54,18 @@ class App:
         delta_millis = self.frame_delta.days * 24.0 * 60.0 * 60.0 * 1000.0
         delta_millis += self.frame_delta.seconds * 1000.0
         delta_millis += self.frame_delta.microseconds / 1000.0
-        text = self.font.render('Maze - {} fps ({}ms)'.format(int(1000.0/delta_millis), int(delta_millis)), True, (0, 0, 0))
-        self.display_surface.blit(text, (10, 10))
+        title_text_surface = self.font.render('Maze - {} fps ({}ms)'.format(int(1000.0/delta_millis), int(delta_millis)), True, (0, 0, 0))
+        self.display_surface.blit(title_text_surface, (10, 10))
+
+        state_text = 'Idle'
+        if self.solving_state == SolvingState.GENERATING:
+            state_text = 'Generating'
+        elif self.solving_state == SolvingState.SOLVING:
+            state_text = 'Solving'
+
+        state_text_surface = self.font.render(state_text, True, (0, 0, 0))
+        state_text_width = state_text_surface.get_width()
+        self.display_surface.blit(state_text_surface, (10 + self.maze.full_width() - state_text_width, 10))
 
     def start(self):
         last_frame_time = datetime.datetime.now()
@@ -70,6 +86,12 @@ class App:
         pygame.quit()
 
 
+class SolvingState:
+    GENERATING = 0
+    SOLVING = 1
+    IDLE = 2
+
+
 class Maze:
     def __init__(self, x, y, maze_width, maze_height):
         self.x = x
@@ -82,6 +104,8 @@ class Maze:
 
         self.tile_width = 12
         self.border_width = 2
+
+        self.path = None
 
         self.finished = False
 
@@ -153,9 +177,27 @@ class Maze:
                 if cell.connected_south:
                     pygame.draw.rect(surface, color, pygame.Rect(draw_x, draw_y + self.tile_width, self.tile_width, self.border_width))
 
+        if self.path and len(self.path) > 1:
+            for i in range(1, len(self.path)):
+                previous_cell = self.path[i - 1]
+                current_cell = self.path[i]
+
+                previous_pos = (self.x + previous_cell[0] * (self.tile_width + self.border_width) + (self.border_width + self.tile_width) / 2,
+                                self.y + previous_cell[1] * (self.tile_width + self.border_width) + (self.border_width + self.tile_width) / 2)
+
+                current_pos = (self.x + current_cell[0] * (self.tile_width + self.border_width) + (self.border_width + self.tile_width) / 2,
+                               self.y + current_cell[1] * (self.tile_width + self.border_width) + (self.border_width + self.tile_width) / 2)
+
+                pygame.draw.line(surface, (255, 0, 0), previous_pos, current_pos, self.border_width)
+
     def finish(self, path=None):
-        print("yes")
+        self.path = path
         self.finished = True
+
+        for x in range(0, self.maze_width):
+            for y in range(0, self.maze_height):
+                cell = self.maze[x][y]
+                cell.color = (255, 255, 255)
 
 
 class MazeCell:
