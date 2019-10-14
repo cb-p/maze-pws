@@ -3,7 +3,7 @@ import pygame
 
 
 class App:
-    def __init__(self, generator):
+    def __init__(self, generator, solver):
         self.running = True
         self.size = 640, 480
 
@@ -19,6 +19,9 @@ class App:
 
         self.maze = Maze(10, 30, 20, 20)
         self.maze_generator = generator(self.maze)
+        self.maze_solver = solver(self.maze, (0, 0), (19, 19))
+
+        self.solving = False
 
         pygame.init()
     
@@ -27,7 +30,15 @@ class App:
 
         while self.last_step_delta > self.step_delta:
             self.last_step_delta -= self.step_delta
-            self.maze_generator.step()
+
+            if self.solving:
+                self.maze_solver.step()
+            else:
+                self.maze_generator.step()
+
+            if self.maze.finished:
+                self.maze.finished = False
+                self.solving = True
 
     def draw(self):
         self.display_surface.fill((255, 255, 255))
@@ -70,6 +81,8 @@ class Maze:
 
         self.tile_width = 12
         self.border_width = 2
+
+        self.finished = False
 
     def full_width(self):
         return self.maze_width * (self.tile_width + self.border_width) + self.border_width
@@ -139,6 +152,9 @@ class Maze:
                 if cell.connected_south:
                     pygame.draw.rect(surface, color, pygame.Rect(draw_x, draw_y + self.tile_width, self.tile_width, self.border_width))
 
+    def finish(self, path=None):
+        self.finished = True
+
 
 class MazeCell:
     def __init__(self):
@@ -172,8 +188,18 @@ class MazeGenerator:
         pass
 
 
+class MazeSolver:
+    def __init__(self, maze, start, end):
+        self.maze = maze
+        self.start = start
+        self.end = end
+
+    def step(self):
+        pass
+
+
 if __name__ == "__main__":
     print("maze.py >> This file is meant to be used as a library, executing it will result in an useless simulation!")
 
-    app = App(MazeGenerator)
+    app = App(MazeGenerator, MazeSolver)
     app.start()

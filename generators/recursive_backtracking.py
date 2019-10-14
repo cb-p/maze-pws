@@ -15,6 +15,7 @@ class RecursiveBacktrackingGenerator(MazeGenerator):
         self.maze.highlight(current_pos[0], current_pos[1])
 
         if len(self.visited) == self.maze.maze_width * self.maze.maze_height:
+            self.maze.finish()
             return
 
         current_x, current_y = current_pos
@@ -50,5 +51,5 @@ class RecursiveBacktrackingGenerator(MazeGenerator):
 
 
 if __name__ == "__main__":
-    app = App(RecursiveBacktrackingGenerator)
+    app = App(RecursiveBacktrackingGenerator, MazeSolver)
     app.start()
