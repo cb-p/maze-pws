@@ -34,7 +34,8 @@ class App:
             if self.solving:
                 self.maze_solver.step()
             else:
-                self.maze_generator.step()
+                while not self.maze.finished:
+                    self.maze_generator.step()
 
             if self.maze.finished:
                 self.maze.finished = False
