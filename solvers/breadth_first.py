@@ -7,9 +7,8 @@ class BreadthFirstSolver(MazeSolver):
     def __init__(self, maze, start, end):
         super().__init__(maze, start, end)
         self.queue = []
-        self.visited = []
+        self.visited = [self.start]
         self.queue.append(self.start)
-        self.end = end
         self.old_pos = [[0] * maze.maze_height for _ in range(maze.maze_width)]
         self.path = [self.end]
 
@@ -26,7 +25,6 @@ class BreadthFirstSolver(MazeSolver):
 
             current = self.queue.pop(0)
 
-            self.visited.append(current)
             all_directions = [Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST]
             directions = []
 
@@ -53,6 +51,7 @@ class BreadthFirstSolver(MazeSolver):
                     if new_pos:
                         self.old_pos[new_pos[0]][new_pos[1]] = current
                         self.queue.append(new_pos)
+                        self.visited.append(new_pos)
 
     def generate_path(self):
         current = self.path[len(self.path) - 1]

@@ -22,11 +22,15 @@ class Button:
         else:
             self.hover = False
 
-        if pygame.mouse.get_pressed()[0]:
-            if not self.down:
-                self.down = True
-                self.pressed = True
+        if self.hover:
+            if pygame.mouse.get_pressed()[0]:
+                if not self.down:
+                    self.down = True
+                    self.pressed = True
+                else:
+                    self.pressed = False
             else:
+                self.down = False
                 self.pressed = False
         else:
             self.down = False
@@ -38,6 +42,8 @@ class Button:
         color = (255, 255, 255)
         if self.hover:
             color = (228, 228, 228)
+        if self.down:
+            color = (200, 200, 200)
 
         pygame.draw.rect(surface, color, pygame.Rect(self.x, self.y, self.width, self.height))
         pygame.draw.rect(surface, (0, 0, 0), pygame.Rect(self.x, self.y, self.width, self.height), 2)

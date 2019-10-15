@@ -32,9 +32,8 @@ class App:
         self.last_step_delta += self.frame_delta
 
         if self.instant_solve_button.update():
-            while True:
-                if self.step_maze():
-                    break
+            while not self.step_maze():
+                pass
 
         while self.last_step_delta > self.step_delta:
             self.last_step_delta -= self.step_delta
@@ -52,7 +51,7 @@ class App:
             if self.maze.finished:
                 self.solving_state = SolvingState.IDLE
         else:
-            pass
+            return True
 
         if self.maze.finished:
             self.maze.finished = False
