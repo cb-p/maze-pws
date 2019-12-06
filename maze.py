@@ -24,7 +24,7 @@ class App:
 
         self.solving_state = SolvingState.GENERATING
 
-        self.instant_solve_button = ui.Button('Instant Solve', self.font, 10, self.maze.full_height() + 40, 150, 30)
+        self.instant_solve_button = ui.Button('Instant Generate', self.font, 10, self.maze.full_height() + 40, 150, 30)
 
         pygame.init()
     
@@ -45,11 +45,13 @@ class App:
 
             if self.maze.finished:
                 self.solving_state = SolvingState.SOLVING
+                self.instant_solve_button.set_text("Instant Solve")
         elif self.solving_state == SolvingState.SOLVING:
             self.maze_solver.step()
 
             if self.maze.finished:
                 self.solving_state = SolvingState.IDLE
+                self.instant_solve_button.set_disabled(True)
         else:
             return True
 

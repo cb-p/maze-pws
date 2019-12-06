@@ -13,6 +13,7 @@ class Button:
         self.hover = False
         self.down = False
         self.pressed = False
+        self.disabled = False
 
     def update(self):
         mouse = pygame.mouse.get_pos()
@@ -22,7 +23,7 @@ class Button:
         else:
             self.hover = False
 
-        if self.hover:
+        if self.hover and not self.disabled:
             if pygame.mouse.get_pressed()[0]:
                 if not self.down:
                     self.down = True
@@ -38,11 +39,17 @@ class Button:
 
         return self.pressed
 
+    def set_text(self, text):
+        self.text = text
+
+    def set_disabled(self, disabled):
+        self.disabled = disabled
+
     def draw(self, surface):
         color = (255, 255, 255)
-        if self.hover:
+        if self.hover or self.disabled:
             color = (228, 228, 228)
-        if self.down:
+        if self.down and not self.disabled:
             color = (200, 200, 200)
 
         pygame.draw.rect(surface, color, pygame.Rect(self.x, self.y, self.width, self.height))
