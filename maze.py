@@ -18,7 +18,7 @@ class App:
         pygame.font.init()
         self.font = pygame.font.SysFont('Calibri', 18)
 
-        self.maze = Maze(10, 30, 20, 20)
+        self.maze = Maze(self.font, 10, 30, 20, 20)
         self.maze_generator = generator(self.maze)
         self.maze_solver = solver(self.maze, (0, 0), (19, 19))
 
@@ -109,16 +109,18 @@ class SolvingState:
 
 
 class Maze:
-    def __init__(self, x, y, maze_width, maze_height):
+    def __init__(self, font, x, y, maze_width, maze_height):
         self.x = x
         self.y = y
         self.maze_width = maze_width
         self.maze_height = maze_height
 
+        self.font = font
+
         self.maze = [[MazeCell() for _ in range(0, self.maze_height)] for _ in range(0, self.maze_width)]
         self.highlighted = (-1, -1)
 
-        self.tile_width = 12
+        self.tile_width = 16
         self.border_width = 2
 
         self.path = None
@@ -166,6 +168,18 @@ class Maze:
             
         if direction == Direction.EAST:
             return self.maze[x][y].connected_east
+
+    def steps(self, x, y):
+        if x < 0 or y < 0 or x > self.maze_width - 1 or y > self.maze_height - 1:
+            return -1
+
+        return self.maze[x][y].steps
+
+    def set_steps(self, x, y, steps):
+        if x < 0 or y < 0 or x > self.maze_width - 1 or y > self.maze_height - 1:
+            return
+
+        self.maze[x][y].steps = steps
     
     def color(self, x, y, color):
         if x < 0 or y < 0 or x > self.maze_width - 1 or y > self.maze_height - 1:
@@ -192,6 +206,12 @@ class Maze:
 
                 if cell.connected_south:
                     pygame.draw.rect(surface, color, pygame.Rect(draw_x, draw_y + self.tile_width, self.tile_width, self.border_width))
+
+                if cell.steps != 1:
+                    text_surface = self.font.render(str(cell.steps), True, (0, 0, 0))
+                    text_x = draw_x + self.tile_width / 2 - text_surface.get_width() / 2
+                    text_y = draw_y + self.tile_width / 2 - text_surface.get_height() / 2
+                    surface.blit(text_surface, (text_x, text_y + 2))
 
         if self.path and len(self.path) > 1:
             for i in range(1, len(self.path)):
@@ -220,6 +240,7 @@ class MazeCell:
     def __init__(self):
         self.connected_east = False
         self.connected_south = False
+        self.steps = 1
         self.color = (200, 200, 200)
 
 
