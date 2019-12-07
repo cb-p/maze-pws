@@ -17,8 +17,9 @@ class App:
 
         pygame.font.init()
         self.font = pygame.font.SysFont('Calibri', 18)
+        self.small_font = pygame.font.SysFont('Calibri', 12)
 
-        self.maze = Maze(self.font, 10, 30, 20, 20)
+        self.maze = Maze(self.small_font, 10, 30, 20, 20)
         self.maze_generator = generator(self.maze)
         self.maze_solver = solver(self.maze, (0, 0), (19, 19))
 
