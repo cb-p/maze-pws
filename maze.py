@@ -24,21 +24,32 @@ class App:
         self.maze_solver = solver(self.maze, (0, 0), (19, 19))
 
         self.solving_state = SolvingState.GENERATING
+        self.paused = True
 
-        self.instant_solve_button = ui.Button('Instant Generate', self.font, 10, self.maze.full_height() + 40, 150, 30)
+        self.instant_solve_button = ui.Button('Instant Generate', self.font, 10, self.maze.full_height() + 40, self.maze.full_width() / 2 - 5, 30)
+        self.pause_button = ui.Button('Play', self.font, self.maze.full_width() / 2 + 15, self.maze.full_height() + 40, self.maze.full_width() / 2 - 5, 30)
 
         pygame.init()
     
     def update(self):
-        self.last_step_delta += self.frame_delta
-
         if self.instant_solve_button.update():
             while not self.step_maze():
                 pass
 
-        while self.last_step_delta > self.step_delta:
-            self.last_step_delta -= self.step_delta
-            self.step_maze()
+        if self.pause_button.update():
+            self.paused = not self.paused
+
+            if self.paused:
+                self.pause_button.set_text('Play')
+            else:
+                self.pause_button.set_text('Pause')
+
+        if not self.paused:
+            self.last_step_delta += self.frame_delta
+
+            while self.last_step_delta > self.step_delta:
+                self.last_step_delta -= self.step_delta
+                self.step_maze()
 
     def step_maze(self):
         if self.solving_state == SolvingState.GENERATING:
@@ -78,11 +89,15 @@ class App:
         elif self.solving_state == SolvingState.SOLVING:
             state_text = 'Solving'
 
+        if self.paused:
+            state_text += ' (paused)'
+
         state_text_surface = self.font.render(state_text, True, (0, 0, 0))
         state_text_width = state_text_surface.get_width()
         self.display_surface.blit(state_text_surface, (10 + self.maze.full_width() - state_text_width, 10))
 
         self.instant_solve_button.draw(self.display_surface)
+        self.pause_button.draw(self.display_surface)
 
     def start(self):
         last_frame_time = datetime.datetime.now()
