@@ -20,6 +20,10 @@ class App:
         self.small_font = pygame.font.SysFont('Calibri', 12)
 
         self.maze = Maze(self.small_font, 10, 30, 20, 20)
+
+        self.maze_generator_class = generator
+        self.maze_solver_class = solver
+
         self.maze_generator = generator(self.maze)
         self.maze_solver = solver(self.maze, (0, 0), (19, 19))
 
@@ -28,6 +32,7 @@ class App:
 
         self.instant_solve_button = ui.Button('Instant Generate', self.font, 10, self.maze.full_height() + 40, self.maze.full_width() / 2 - 5, 30)
         self.pause_button = ui.Button('Play', self.font, self.maze.full_width() / 2 + 15, self.maze.full_height() + 40, self.maze.full_width() / 2 - 5, 30)
+        self.reset_button = ui.Button('Reset', self.font, 10, self.maze.full_height() + 80, self.maze.full_width() / 2 - 5, 30)
 
         pygame.init()
     
@@ -43,6 +48,9 @@ class App:
                 self.pause_button.set_text('Play')
             else:
                 self.pause_button.set_text('Pause')
+
+        if self.reset_button.update():
+            self.reset()
 
         if not self.paused:
             self.last_step_delta += self.frame_delta
@@ -64,6 +72,7 @@ class App:
             if self.maze.finished:
                 self.solving_state = SolvingState.IDLE
                 self.instant_solve_button.set_disabled(True)
+                self.pause_button.set_disabled(True)
         else:
             return True
 
@@ -72,6 +81,20 @@ class App:
             return True
 
         return False
+
+    def reset(self):
+        self.maze = Maze(self.small_font, 10, 30, 20, 20)
+        self.solving_state = SolvingState.GENERATING
+        self.paused = True
+
+        self.instant_solve_button.set_text('Instant Generate')
+        self.instant_solve_button.set_disabled(False)
+
+        self.pause_button.set_text("Play")
+        self.pause_button.set_disabled(False)
+
+        self.maze_generator = self.maze_generator_class(self.maze)
+        self.maze_solver = self.maze_solver_class(self.maze, (0, 0), (19, 19))
 
     def draw(self):
         self.display_surface.fill((255, 255, 255))
@@ -98,6 +121,7 @@ class App:
 
         self.instant_solve_button.draw(self.display_surface)
         self.pause_button.draw(self.display_surface)
+        self.reset_button.draw(self.display_surface)
 
     def start(self):
         last_frame_time = datetime.datetime.now()
