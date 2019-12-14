@@ -305,7 +305,6 @@ class Maze:
     def highlight(self, x, y):
         self.highlighted = (x, y)
 
-    # IDEA: Add an array: [(x, y, color), ..]
     def draw(self, surface, custom_colors):
         pygame.draw.rect(surface, (0, 0, 0), pygame.Rect(self.x, self.y, self.full_width(), self.full_height()))
 
