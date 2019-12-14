@@ -6,7 +6,7 @@ import ui
 class App:
     def __init__(self, generator, solver):
         self.running = True
-        self.size = 640, 480
+        self.size = 382, 480
 
         self.display_surface = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
         pygame.display.set_caption('Maze')
@@ -159,7 +159,6 @@ class App:
             if self.maze.x < mouse[0] < self.maze.x + self.maze.full_width() and self.maze.y < mouse[1] < self.maze.y + self.maze.full_height():
                 maze_x = int((mouse[0] - self.maze.x) / (self.maze.tile_width + self.maze.border_width))
                 maze_y = int((mouse[1] - self.maze.y) / (self.maze.tile_width + self.maze.border_width))
-                print(maze_x, maze_y)
 
                 custom_colors.append((maze_x, maze_y, (240, 240, 240)))
 
