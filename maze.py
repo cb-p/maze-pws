@@ -19,20 +19,27 @@ class App:
         self.font = pygame.font.SysFont('Calibri', 18)
         self.small_font = pygame.font.SysFont('Calibri', 12)
 
+        self.start_pos = (0, 0)
+        self.end_pos = (19, 19)
+
         self.maze = Maze(self.small_font, 10, 30, 20, 20)
 
         self.maze_generator_class = generator
         self.maze_solver_class = solver
 
         self.maze_generator = generator(self.maze)
-        self.maze_solver = solver(self.maze, (0, 0), (19, 19))
+        self.maze_solver = solver(self.maze, self.start_pos, self.end_pos)
 
         self.solving_state = SolvingState.GENERATING
         self.paused = True
+        self.selecting_start = False
+        self.selecting_end = False
+        self.selecting_pressed = False
 
         self.instant_solve_button = ui.Button('Instant Generate', self.font, 10, self.maze.full_height() + 40, self.maze.full_width() / 2 - 5, 30)
         self.pause_button = ui.Button('Play', self.font, self.maze.full_width() / 2 + 15, self.maze.full_height() + 40, self.maze.full_width() / 2 - 5, 30)
         self.reset_button = ui.Button('Reset', self.font, 10, self.maze.full_height() + 80, self.maze.full_width() / 2 - 5, 30)
+        self.set_start_end_button = ui.Button('Set Start / End', self.font, self.maze.full_width() / 2 + 15, self.maze.full_height() + 80, self.maze.full_width() / 2 - 5, 30)
 
         pygame.init()
     
@@ -52,6 +59,44 @@ class App:
         if self.reset_button.update():
             self.reset()
 
+        if self.set_start_end_button.update():
+            self.set_start_end_button.set_disabled(True)
+            self.pause_button.set_disabled(True)
+            self.reset_button.set_disabled(True)
+            self.instant_solve_button.set_disabled(True)
+            self.selecting_start = True
+
+        if pygame.mouse.get_pressed()[0]:
+            if not self.selecting_pressed and (self.selecting_start or self.selecting_end):
+                self.selecting_pressed = True
+
+                mouse = pygame.mouse.get_pos()
+
+                if self.maze.x < mouse[0] < self.maze.x + self.maze.full_width() and self.maze.y < mouse[1] < self.maze.y + self.maze.full_height():
+                    maze_x = int((mouse[0] - self.maze.x) / (self.maze.tile_width + self.maze.border_width))
+                    maze_y = int((mouse[1] - self.maze.y) / (self.maze.tile_width + self.maze.border_width))
+
+                    if self.selecting_end:
+                        self.selecting_end = False
+
+                        self.set_start_end_button.set_disabled(False)
+                        self.pause_button.set_disabled(False)
+                        self.reset_button.set_disabled(False)
+                        self.instant_solve_button.set_disabled(False)
+
+                        self.end_pos = (maze_x, maze_y)
+
+                        self.maze_generator = self.maze_generator_class(self.maze)
+                        self.maze_solver = self.maze_solver_class(self.maze, self.start_pos, self.end_pos)
+
+                    if self.selecting_start:
+                        self.selecting_start = False
+                        self.selecting_end = True
+
+                        self.start_pos = (maze_x, maze_y)
+        else:
+            self.selecting_pressed = False
+
         if not self.paused:
             self.last_step_delta += self.frame_delta
 
@@ -61,12 +106,17 @@ class App:
 
     def step_maze(self):
         if self.solving_state == SolvingState.GENERATING:
+            self.set_start_end_button.set_disabled(True)
             self.maze_generator.step()
 
             if self.maze.finished:
+                if self.paused:
+                    self.set_start_end_button.set_disabled(False)
+
                 self.solving_state = SolvingState.SOLVING
                 self.instant_solve_button.set_text("Instant Solve")
         elif self.solving_state == SolvingState.SOLVING:
+            self.set_start_end_button.set_disabled(True)
             self.maze_solver.step()
 
             if self.maze.finished:
@@ -93,12 +143,31 @@ class App:
         self.pause_button.set_text("Play")
         self.pause_button.set_disabled(False)
 
+        self.set_start_end_button.set_disabled(False)
+
         self.maze_generator = self.maze_generator_class(self.maze)
-        self.maze_solver = self.maze_solver_class(self.maze, (0, 0), (19, 19))
+        self.maze_solver = self.maze_solver_class(self.maze, self.start_pos, self.end_pos)
 
     def draw(self):
         self.display_surface.fill((255, 255, 255))
-        self.maze.draw(self.display_surface)
+
+        custom_colors = []
+
+        if self.selecting_start or self.selecting_end:
+            mouse = pygame.mouse.get_pos()
+
+            if self.maze.x < mouse[0] < self.maze.x + self.maze.full_width() and self.maze.y < mouse[1] < self.maze.y + self.maze.full_height():
+                maze_x = int((mouse[0] - self.maze.x) / (self.maze.tile_width + self.maze.border_width))
+                maze_y = int((mouse[1] - self.maze.y) / (self.maze.tile_width + self.maze.border_width))
+                print(maze_x, maze_y)
+
+                custom_colors.append((maze_x, maze_y, (240, 240, 240)))
+
+        if self.solving_state == SolvingState.IDLE or self.paused:
+            custom_colors.append((self.start_pos[0], self.start_pos[1], (0, 255, 0)))
+            custom_colors.append((self.end_pos[0], self.end_pos[1], (255, 0, 0)))
+
+        self.maze.draw(self.display_surface, custom_colors)
 
         delta_millis = self.frame_delta.days * 24.0 * 60.0 * 60.0 * 1000.0
         delta_millis += self.frame_delta.seconds * 1000.0
@@ -115,6 +184,12 @@ class App:
         if self.paused:
             state_text += ' (paused)'
 
+        if self.selecting_start:
+            state_text = 'Selecting Start Pos...'
+
+        if self.selecting_end:
+            state_text = 'Selecting End Pos...'
+
         state_text_surface = self.font.render(state_text, True, (0, 0, 0))
         state_text_width = state_text_surface.get_width()
         self.display_surface.blit(state_text_surface, (10 + self.maze.full_width() - state_text_width, 10))
@@ -122,6 +197,7 @@ class App:
         self.instant_solve_button.draw(self.display_surface)
         self.pause_button.draw(self.display_surface)
         self.reset_button.draw(self.display_surface)
+        self.set_start_end_button.draw(self.display_surface)
 
     def start(self):
         last_frame_time = datetime.datetime.now()
@@ -230,7 +306,8 @@ class Maze:
     def highlight(self, x, y):
         self.highlighted = (x, y)
 
-    def draw(self, surface):
+    # IDEA: Add an array: [(x, y, color), ..]
+    def draw(self, surface, custom_colors):
         pygame.draw.rect(surface, (0, 0, 0), pygame.Rect(self.x, self.y, self.full_width(), self.full_height()))
 
         for x in range(0, self.maze_width):
@@ -242,6 +319,11 @@ class Maze:
 
                 width_offset = self.border_width if cell.connected_east else 0
                 color = (0, 255, 0) if x == self.highlighted[0] and y == self.highlighted[1] else cell.color
+
+                for custom_color in custom_colors:
+                    if custom_color[0] == x and custom_color[1] == y:
+                        color = custom_color[2]
+
                 pygame.draw.rect(surface, color, pygame.Rect(draw_x, draw_y, self.tile_width + width_offset, self.tile_width))
 
                 if cell.connected_south:
@@ -269,6 +351,7 @@ class Maze:
     def finish(self, path=None):
         self.path = path
         self.finished = True
+        self.highlighted = (-1, -1)
 
         for x in range(0, self.maze_width):
             for y in range(0, self.maze_height):
